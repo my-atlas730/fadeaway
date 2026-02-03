@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Atlas | 宇宙的容器</title>
+    <style>
+        :root { --gold: #f6d88a; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #020617; color: #fff; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            font-family: serif;
+        }
+
+        /* 畫布層：負責星星與沙粒粒子 */
+        canvas { position: fixed; top: 0; left: 0; z-index: 1; pointer-events: none; }
+
+        /* 介面層 */
+        .main-ui {
+            position: relative; z-index: 10;
+            display: flex; flex-direction: column; align-items: center;
+            width: 340px; text-align: center; transition: opacity 2s ease;
+        }
+
+        .core {
+            width: 10px; height: 10px; background: #fff; border-radius: 50%;
+            box-shadow: 0 0 20px 5px var(--gold); margin-bottom: 30px;
+        }
+
+        h1 { font-size: 24px; letter-spacing: 12px; font-weight: 300; margin-bottom: 10px; }
+        p { font-size: 14px; letter-spacing: 4px; opacity: 0.5; margin-bottom: 35px; line-height: 1.8; }
+
+        textarea {
+            width: 100%; height: 110px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(246, 216, 138, 0.2); border-radius: 4px;
+            color: #fff; text-align: center; outline: none; padding: 15px;
+            font-size: 16px; resize: none; box-sizing: border-box;
+        }
+
+        .btn {
+            margin-top: 35px; background: transparent; border: 1px solid var(--gold);
+            color: var(--gold); padding: 12px 60px; cursor: pointer;
+            letter-spacing: 8px; font-size: 14px; transition: 0.4s;
+        }
+        .btn:hover { background: rgba(246, 216, 138, 0.1); }
+
+        #final { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            display: none; text-align: center; font-size: 18px; letter-spacing: 8px; 
+            z-index: 100; opacity: 0; transition: 4s;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="universe"></canvas>
+
+<div class="main-ui" id="ui">
+    <div class="core"></div>
+    <h1>宇宙的容器</h1>
+    <p>在此處交付，隨群星緩緩流動<br>讓心平靜</p>
+    
+    <form id="rForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfBP_c8xTai1pjSyk73l1n88MXq3p14qQHb5Je3EFWWI1to6g/formResponse" method="POST" target="h_frame" onsubmit="igniteSand(event)">
+        <textarea name="entry.390229708" id="msg" placeholder="在此處放下..." required></textarea><br>
+        <button type="submit" class="btn">啟動釋放</button>
+    </form>
+</div>
+
+<div id="final">它已歸於群星。</div>
+<iframe name="h_frame" style="display:none;"></iframe>
+
+<script>
+    const canvas = document.getElementById('universe');
+    const ctx = canvas.getContext('2d');
+    let w, h, stars = [], sand = [];
+
+    function init() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+        stars = Array.from({length: 120}, () => ({
+            x: Math.random() * w, y: Math.random() * h,
+            s: Math.random() * 1.5, p: Math.random() * 10, v: 0.02 + Math.random() * 0.02
+        }));
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, w, h);
+
+        // 星星閃爍
+        stars.forEach(s => {
+            s.p += s.v;
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + Math.abs(Math.sin(s.p)) * 0.7})`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2); ctx.fill();
+        });
+
+        // 沙粒消散效果
+        sand.forEach((p, i) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.l -= 0.005; // 壽命減少
+            ctx.fillStyle = `rgba(246, 216, 138, ${p.l})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+            if(p.l <= 0) sand.splice(i, 1);
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    function igniteSand(e) {
+        // 在 UI 區域生成大量沙粒
+        const rect = document.getElementById('msg').getBoundingClientRect();
+        for(let i=0; i<400; i++) {
+            sand.push({
+                x: rect.left + Math.random() * rect.width,
+                y: rect.top + Math.random() * rect.height,
+                vx: (Math.random() - 0.3) * 2, // 往右斜上飄
+                vy: (Math.random() - 0.8) * 3,
+                size: Math.random() * 2,
+                l: 1
+            });
+        }
+
+        // UI 淡淡消失
+        document.getElementById('ui').style.opacity = '0';
+        
+        setTimeout(() => {
+            document.getElementById('ui').style.display = 'none';
+            const f = document.getElementById('final');
+            f.style.display = 'block';
+            setTimeout(() => f.style.opacity = '1', 100);
+        }, 2000);
+
+        setTimeout(() => location.reload(), 12000);
+    }
+
+    window.onresize = init;
+    init();
+    draw();
+</script>
+</body>
+</html>
